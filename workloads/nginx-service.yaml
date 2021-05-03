@@ -1,12 +1,15 @@
-apiVersion: v1
+apiVersion: v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Service
 metadata:
-  name: nginx-service
-  namespace: web
+ labels:
+   service: nginx-service
+ name: nginx-deployment
 spec:
-  selector:
-    app: nginx
-  ports:
-    - port: 80
-      targetPort: 80
-  type: LoadBalancer
+ type: NodePort
+ ports:
+ - name: nginx-deployment
+   protocol: TCP
+   port: 80
+   targetPort: 80
+ selector:
+   app: nginx
