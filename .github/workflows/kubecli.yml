@@ -24,14 +24,16 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@master
-
       - name: deploy to cluster
         uses: steebchen/kubectl@master
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
 
       # Runs a set of commands using the runners shell
-      - name: Verify kubectl cli
-        run: |
-          kubectl get nodes
-          kubectl get all
+      - name: verify deployment
+        uses: steebchen/kubectl@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+          KUBECTL_VERSION: "1.19"
+        with:
+          args: '"get nodes"'
