@@ -85,7 +85,7 @@ jobs:
             name: runner-backup
             namespace: ${{ env.SourceNamespace }}
           spec:
-            type: full
+            type: Full
             scheduleType: Periodic
             backupPlan:
               name: runner-backup-plan
@@ -103,13 +103,15 @@ jobs:
         shell: bash
         run: |
           echo "Creating BackupPlan"
-          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" create -f RunnerBackupPlan.yaml
+          $KUBECLI create -f RunnerBackupPlan.yaml
           sleep 10
           echo "Check BackupPlan"
-          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get BackupPlan -n ${{ env.SourceNamespace }}
+          $KUBECLI get BackupPlan -n ${{ env.SourceNamespace }}
           echo "Creating Backup"
-          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" create -f RunnerBackup.yaml
+          $KUBECLI create -f RunnerBackup.yaml
           sleep 30
           echo "Check Backup"
-          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get Backup -n ${{ env.SourceNamespace }}
+          $KUBECLI get Backup -n ${{ env.SourceNamespace }}
+        env:
+          KUBECLI: kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" 
           
