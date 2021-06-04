@@ -50,7 +50,6 @@ jobs:
       #    echo "DestNamespace: ${{ env.DestNamespace }}"
           
       # Create BackupPlan and Backup
-      - name: Create BacupPlan and Backup
       - id: CreateBackup
         shell: bash
         run: |
