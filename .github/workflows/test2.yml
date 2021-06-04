@@ -1,0 +1,103 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Test2
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of Backup and Restore jobs that run sequentially
+jobs:
+  # Backup job
+  Backup:
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Install kubectl
+        run: | 
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      # Load userInput through .env
+      - name: Load env
+        uses: xom9ikk/dotenv@v1.0.2
+        with: 
+          path: ".github/"
+
+      # Runs a set of commands using the runners shell
+      #- name: Run a multi-line script
+      #  shell: bash
+      #  run: |
+      #    echo
+      #    kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get pods
+      #    echo
+      #    echo "UserInput"
+      #    echo "Target: ${{ env.Target }}"
+      #    echo "TargetNamespace: ${{ env.TargetNamespace }}"
+      #    echo "SourceNamespace: ${{ env.SourceNamespace }}"
+      #    echo "DestNamespace: ${{ env.DestNamespace }}"
+          
+      # Create BackupPlan and Backup
+      - name: Create BacupPlan and Backup
+      - id: CreateBackup
+        shell: bash
+        run: |
+          echo "Check BackupPlan"
+          $KUBECLI get BackupPlan -n ${{ env.SourceBkpNS }}
+          echo "Check Backup"
+          $KUBECLI get Backup -n ${{ env.SourcBkpNS }}
+          
+          # Retrieve Backup location
+          export BACKUP_LOCATION=$($KUBECLI get Backup RunnerBackup -o jsonpath='{.status.location}')
+          echo "::set-output name=backup_location::${BACKUP_LOCATION}"
+        env:
+          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig 
+    outputs:
+      backup_location: ${{ steps.CreateBackup.outputs.backup_location }}
+          
+  # Restore job
+  Restore:
+    # Wait for Backup job to complete
+    needs: Backup
+    
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Install kubectl
+      - name: Install kubectl
+        run: | 
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      # Load userInput through .env
+      - name: Load env
+        uses: xom9ikk/dotenv@v1.0.2
+        with: 
+          path: ".github/"
+
+      # Check Restore
+      - name: Check Restore
+        shell: bash
+        run: |
+          echo "Backup Location"
+          echo ${{ needs.Backup.outputs.backup_location }}
+          echo "Check Restore"
+          $KUBECLI get restore -n ${{ env.DestRestoreNS }}
+        env:
+          KUBECLI: kubectl --kubeconfig .github/DestKubeconfig 
