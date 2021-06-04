@@ -42,4 +42,5 @@ jobs:
           echo
           echo "UserInput"
           cat "${GITHUB_WORKSPACE}/.github/UserInput"
-          echo Target `cat "${GITHUB_WORKSPACE}/.github/UserInput" | grep Target | awk '{prit $2}'`
+          echo "Target"
+          echo `cat "${GITHUB_WORKSPACE}/.github/UserInput" | grep Target | awk '{prit $2}'`
