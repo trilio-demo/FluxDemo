@@ -113,5 +113,5 @@ jobs:
           echo "Check Backup"
           $KUBECLI get Backup -n ${{ env.SourceNamespace }}
         env:
-          KUBECLI: kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" 
+          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig 
           
