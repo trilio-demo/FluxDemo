@@ -46,7 +46,7 @@ jobs:
           $KUBECLI get Backup
           
           # Retrieve Backup location
-          export BACKUP_LOCATION=$($KUBECLI get Backup RunnerBackup -o jsonpath='{.status.location}')
+          export BACKUP_LOCATION=$($KUBECLI get Backup runner-backup -o jsonpath='{.status.location}')
           echo "::set-output name=backup_location::${BACKUP_LOCATION}"
         env:
           KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig -n ${{ env.SourceBkpNS }}
