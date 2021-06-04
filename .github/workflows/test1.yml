@@ -43,4 +43,5 @@ jobs:
           echo "UserInput"
           cat "${GITHUB_WORKSPACE}/.github/UserInput"
           echo "Target"
-          echo `cat "${GITHUB_WORKSPACE}/.github/UserInput" | grep Target | awk '{prit $2}'`
+          echo "TARGET=$(cat "${GITHUB_WORKSPACE}/.github/UserInput" | grep Target | awk '{prit $2}')" >> $GITHUB_ENV
+          echo $TARGET
