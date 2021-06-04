@@ -162,8 +162,8 @@ jobs:
                 name: ${{ env.Target }}
             restoreNamespace: ${{ env.DestNamespace }}
             skipIfAlreadyExists: true
-          END        
-      
+          END
+          
       # Check Restore manifest 
       - name: Check Restore manifest
         shell: bash
