@@ -51,7 +51,7 @@ jobs:
       #    echo "DestNamespace: ${{ env.DestNamespace }}"
           
       # Create Manifests
-      - name: Create backup plan and backup manifests
+      - name: Create backup plan manifests
         shell: bash
         run: |
           cat >> RunnerBackupPlan.yaml <<END 
@@ -75,9 +75,9 @@ jobs:
       #    cat RunnerBackupPlan.yaml  
           
       # Create Backup
-      #- name: Create backup 
-      #  shell: bash
-      #  run: |
+      - name: Create backup manifest
+        shell: bash
+        run: |
           cat >> RunnerBackup.yaml <<END 
           apiVersion: triliovault.trilio.io/v1
           kind: Backup
@@ -96,7 +96,7 @@ jobs:
       #- name: Check backup 
       #  shell: bash
       #  run: |
-          cat RunnerBackup.yaml  
+      #    cat RunnerBackup.yaml  
 
       # Create BackupPlan and Backup
       - name: Create BacupPlan and Backup
@@ -165,9 +165,9 @@ jobs:
           END        
       
       # Check Restore manifest 
-      #- name: Check backup plan
-      #  shell: bash
-      #  run: |
+      - name: Check Restore manifest
+        shell: bash
+        run: |
           cat RunnerRestore.yaml  
           
       # Create Restore
