@@ -72,7 +72,7 @@ jobs:
       #- name: Check backup plan
       #  shell: bash
       #  run: |
-          cat RunnerBackupPlan.yaml  
+      #    cat RunnerBackupPlan.yaml  
           
       # Create Backup
       #- name: Create backup 
