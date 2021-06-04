@@ -63,13 +63,53 @@ jobs:
           spec:
             backupNamespace: ${{ env.SourceNamespace }}
             backupConfig:
-            target:
-              name: ${{ env.Target }}
-              namespace: ${{ env.TargetNamespace }}
+              target:
+                name: ${{ env.Target }}
+                namespace: ${{ env.TargetNamespace }}
           END
         
       # Check BackupPlan 
-      - name: Create backup plan
+      - name: Check backup plan
         shell: bash
         run: |
           cat RunnerBackupPlan.yaml  
+          
+      # Create Backup
+      - name: Create backup 
+        shell: bash
+        run: |
+          cat >> RunnerBackup.yaml <<END 
+          apiVersion: triliovault.trilio.io/v1
+          kind: Backup
+          metadata:
+            name: runner-backup
+            namespace: ${{ env.SourceNamespace }}
+          spec:
+            type: full
+            scheduleType: Periodic
+            backupPlan:
+              name: runner-backup-plan
+              namespace: ${{ env.SourceNamespace }}
+          END
+        
+      # Check Backup 
+      - name: Check backup 
+        shell: bash
+        run: |
+          cat RunnerBackup.yaml  
+
+      # Create BackupPlan and Backup
+      - name: Create BacupPlan and Backup
+        shell: bash
+        run: |
+          echo "Creating BackupPlan"
+          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" create -f RunnerBackupPlan.yaml
+          sleep 10
+          echo "Check BackupPlan"
+          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get BackupPlan -n ${{ env.SourceNamespace }}
+          echo "Creating Backup"
+          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" create -f RunnerBackup.yaml
+          sleep 30
+          echo "Check Backup"
+          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get Backup -n ${{ env.SourceNamespace }}
+          
