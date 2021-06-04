@@ -43,5 +43,8 @@ jobs:
           echo "UserInput"
           cat "${GITHUB_WORKSPACE}/.github/UserInput"
           echo "Target"
-          echo "TARGET=$(cat "${GITHUB_WORKSPACE}/.github/UserInput" | grep Target | awk '{prit $2}')" >> $GITHUB_ENV
+          cat ${GITHUB_WORKSPACE}/.github/UserInput | grep Target | awk '{prit $2}'
+          echo "Adding variable"
+          echo "TARGET=$(cat ${GITHUB_WORKSPACE}/.github/UserInput | grep Target | awk '{prit $2}')" >> $GITHUB_ENV
+          echo "TARGET"
           echo $TARGET
