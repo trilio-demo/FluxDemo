@@ -13,10 +13,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# A workflow run is made up of Backup and Restore jobs that run sequentially
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  # Backup job
+  Backup:
     # The type of runner that the job will run on
     runs-on: self-hosted
 
@@ -38,20 +38,20 @@ jobs:
           path: ".github/"
 
       # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        shell: bash
-        run: |
-          echo
-          kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get pods
-          echo
-          echo "UserInput"
-          echo "Target: ${{ env.Target }}"
-          echo "TargetNamespace: ${{ env.TargetNamespace }}"
-          echo "SourceNamespace: ${{ env.SourceNamespace }}"
-          echo "DestNamespace: ${{ env.DestNamespace }}"
+      #- name: Run a multi-line script
+      #  shell: bash
+      #  run: |
+      #    echo
+      #    kubectl --kubeconfig "${GITHUB_WORKSPACE}/.github/SourceKubeconfig" get pods
+      #    echo
+      #    echo "UserInput"
+      #    echo "Target: ${{ env.Target }}"
+      #    echo "TargetNamespace: ${{ env.TargetNamespace }}"
+      #    echo "SourceNamespace: ${{ env.SourceNamespace }}"
+      #    echo "DestNamespace: ${{ env.DestNamespace }}"
           
-      # Create BackupPlan
-      - name: Create backup plan
+      # Create Manifests
+      - name: Create backup plan and backup manifests
         shell: bash
         run: |
           cat >> RunnerBackupPlan.yaml <<END 
@@ -69,15 +69,15 @@ jobs:
           END
         
       # Check BackupPlan 
-      - name: Check backup plan
-        shell: bash
-        run: |
+      #- name: Check backup plan
+      #  shell: bash
+      #  run: |
           cat RunnerBackupPlan.yaml  
           
       # Create Backup
-      - name: Create backup 
-        shell: bash
-        run: |
+      #- name: Create backup 
+      #  shell: bash
+      #  run: |
           cat >> RunnerBackup.yaml <<END 
           apiVersion: triliovault.trilio.io/v1
           kind: Backup
@@ -93,9 +93,9 @@ jobs:
           END
         
       # Check Backup 
-      - name: Check backup 
-        shell: bash
-        run: |
+      #- name: Check backup 
+      #  shell: bash
+      #  run: |
           cat RunnerBackup.yaml  
 
       # Create BackupPlan and Backup
@@ -109,9 +109,75 @@ jobs:
           $KUBECLI get BackupPlan -n ${{ env.SourceNamespace }}
           echo "Creating Backup"
           $KUBECLI create -f RunnerBackup.yaml
-          sleep 30
+          sleep 120
           echo "Check Backup"
           $KUBECLI get Backup -n ${{ env.SourceNamespace }}
         env:
           KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig 
           
+  # Restore job
+  Restore:
+    # Wait for Backup job to complete
+    needs: Backup
+    
+    # The type of runner that the job will run on
+    runs-on: self-hosted
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      #- name: Install kubectl
+      #  run: | 
+      #    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      #    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+      # Load userInput through .env
+      - name: Load env
+        uses: xom9ikk/dotenv@v1.0.2
+        with: 
+          path: ".github/"
+
+      # Create Manifests
+      - name: Create Restore manifests
+        shell: bash
+        run: |
+          cat >> RunnerRestore.yaml <<END 
+          apiVersion: triliovault.trilio.io/v1
+          kind: Restore
+          metadata:
+            name: runner-restore
+            namespace: ${{ env.DestNamespace }}
+          spec:
+            backupPlan:
+              name: runner-backup-plan
+            source:
+              type: Backup
+              backup:
+                name: runner-backup
+                namespace: ${{ env.SourceNamespace }}
+              target:
+                name: ${{ env.Target }}
+            restoreNamespace: ${{ env.DestNamespace }}
+            skipIfAlreadyExists: true
+          END        
+      
+      # Check Restore manifest 
+      #- name: Check backup plan
+      #  shell: bash
+      #  run: |
+          cat RunnerRestore.yaml  
+          
+      # Create Restore
+      - name: Create Restore
+        shell: bash
+        run: |
+          echo "Creating Restore"
+          $KUBECLI create -f RunnerRestore.yaml
+          sleep 240
+          echo "Check Restore"
+          $KUBECLI get restore -n ${{ env.DestNamespace }}
+        env:
+          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig 
