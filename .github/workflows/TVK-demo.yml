@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Test1
+name: TVK-Backup-Restore
 
 # Controls when the action will run. 
 on:
@@ -59,13 +59,13 @@ jobs:
           kind: BackupPlan
           metadata:
             name: runner-backup-plan
-            namespace: ${{ env.SourceNamespace }}
+            namespace: ${{ env.SourceBkpNS }}
           spec:
-            backupNamespace: ${{ env.SourceNamespace }}
+            backupNamespace: ${{ env.SourceBkpNS }}
             backupConfig:
               target:
-                name: ${{ env.Target }}
-                namespace: ${{ env.TargetNamespace }}
+                name: ${{ env.SourceBkpTarget }}
+                namespace: ${{ env.SourceBkpTargetNS }}
           END
         
       # Check BackupPlan 
@@ -83,13 +83,13 @@ jobs:
           kind: Backup
           metadata:
             name: runner-backup
-            namespace: ${{ env.SourceNamespace }}
+            namespace: ${{ env.SourceBkpNS }}
           spec:
             type: Full
             scheduleType: Periodic
             backupPlan:
               name: runner-backup-plan
-              namespace: ${{ env.SourceNamespace }}
+              namespace: ${{ env.SourceBkpNS }}
           END
         
       # Check Backup 
@@ -106,14 +106,20 @@ jobs:
           $KUBECLI create -f RunnerBackupPlan.yaml
           sleep 10
           echo "Check BackupPlan"
-          $KUBECLI get BackupPlan -n ${{ env.SourceNamespace }}
+          $KUBECLI get BackupPlan
           echo "Creating Backup"
           $KUBECLI create -f RunnerBackup.yaml
           sleep 120
           echo "Check Backup"
-          $KUBECLI get Backup -n ${{ env.SourceNamespace }}
+          $KUBECLI get Backup
+          
+          # Retrieve Backup location
+          export BACKUP_LOCATION=$($KUBECLI get Backup runner-backup -o jsonpath='{.status.location}')
+          echo "::set-output name=backup_location::/${BACKUP_LOCATION}"
         env:
-          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig 
+          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig -n ${{ env.SourceBkpNS }}
+    outputs:
+      backup_location: ${{ steps.CreateBackup.outputs.backup_location }}
           
   # Restore job
   Restore:
@@ -149,18 +155,15 @@ jobs:
           kind: Restore
           metadata:
             name: runner-restore
-            namespace: ${{ env.DestNamespace }}
+            namespace: ${{ env.DestRestoreNS }}
           spec:
-            backupPlan:
-              name: runner-backup-plan
             source:
-              type: Backup
-              backup:
-                name: runner-backup
-                namespace: ${{ env.SourceNamespace }}
+              type: Location
+              location: ${{ needs.Backup.outputs.backup_location }}
               target:
-                name: ${{ env.Target }}
-            restoreNamespace: ${{ env.DestNamespace }}
+                name: ${{ env.DestRestoreTarget }}
+                namespace: ${{ env.DestRestoreTargetNS }}
+            restoreNamespace: ${{ env.DestRestoreNS }}
             skipIfAlreadyExists: true
           END
           
@@ -178,6 +181,6 @@ jobs:
           $KUBECLI create -f RunnerRestore.yaml
           sleep 240
           echo "Check Restore"
-          $KUBECLI get restore -n ${{ env.DestNamespace }}
+          $KUBECLI get restore -n ${{ env.DestRestoreNS }}
         env:
-          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig 
+          KUBECLI: kubectl --kubeconfig .github/DestKubeconfig 
