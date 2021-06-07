@@ -99,7 +99,7 @@ jobs:
       #    cat RunnerBackup.yaml  
 
       # Create BackupPlan and Backup
-      - name: Create BacupPlan and Backup
+      - id: CreateBackup
         shell: bash
         run: |
           echo "Creating BackupPlan"
@@ -150,8 +150,6 @@ jobs:
       - name: Create Restore manifests
         shell: bash
         run: |
-          echo "Output: "
-          echo "${{ needs.Backup.outputs.backup_location }}"
           cat >> RunnerRestore.yaml <<END 
           apiVersion: triliovault.trilio.io/v1
           kind: Restore
@@ -161,18 +159,13 @@ jobs:
           spec:
             source:
               type: Location
-              location: $BACKUP_LOCATION
+              location: ${{ needs.Backup.outputs.backup_location }}
               target:
                 name: ${{ env.DestRestoreTarget }}
                 namespace: ${{ env.DestRestoreTargetNS }}
             restoreNamespace: ${{ env.DestRestoreNS }}
             skipIfAlreadyExists: true
           END
-          
-          echo "Backup Location is: "
-          echo $BACKUP_LOCATION
-        env: 
-          BACKUP_LOCATION: "${{ needs.Backup.outputs.backup_location }}"
           
       # Check Restore manifest 
       - name: Check Restore manifest
