@@ -150,6 +150,8 @@ jobs:
       - name: Create Restore manifests
         shell: bash
         run: |
+          echo "Output: "
+          echo "${{ needs.Backup.outputs.backup_location }}"
           cat >> RunnerRestore.yaml <<END 
           apiVersion: triliovault.trilio.io/v1
           kind: Restore
@@ -170,7 +172,7 @@ jobs:
           echo "Backup Location is: "
           echo $BACKUP_LOCATION
         env: 
-          BACKUP_LOCATION: ${{ needs.Backup.outputs.backup_location }}
+          BACKUP_LOCATION: "${{ needs.Backup.outputs.backup_location }}"
           
       # Check Restore manifest 
       - name: Check Restore manifest
