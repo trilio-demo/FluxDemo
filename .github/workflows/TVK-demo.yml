@@ -98,6 +98,23 @@ jobs:
       #  run: |
       #    cat RunnerBackup.yaml  
 
+      # Script to wait for backup completion 
+      - name: Script to wait for backup
+        shell: bash
+        run: |
+          cat >> wait-backup.sh <<END 
+          #!/bin/bash
+
+          until ($KUBECLI get backup runner-backup 2>/dev/null | grep Available); do sleep 5; done
+          sleep 10
+  
+          END
+          chmod +x wait-backup.sh
+          echo "Checking the backup script"
+          cat wait-backup.sh
+        env:
+          KUBECLI: kubectl --kubeconfig .github/SourceKubeconfig -n ${{ env.SourceBkpNS }}
+
       # Create BackupPlan and Backup
       - id: CreateBackup
         shell: bash
@@ -109,7 +126,7 @@ jobs:
           $KUBECLI get BackupPlan
           echo "Creating Backup"
           $KUBECLI create -f RunnerBackup.yaml
-          sleep 120
+          ./wait-backup.sh
           echo "Check Backup"
           $KUBECLI get Backup
           
@@ -173,14 +190,31 @@ jobs:
         run: |
           cat RunnerRestore.yaml  
           
+      # Script to wait for backup completion 
+      - name: Script to wait for backup
+        shell: bash
+        run: |
+          cat >> wait-restore.sh <<END 
+          #!/bin/bash
+
+          until ($KUBECLI get restore runner-restore 2>/dev/null | grep Completed); do sleep 5; done
+          sleep 10
+  
+          END
+          chmod +x wait-restore.sh
+          echo "Checking the script"
+          cat wait-restore.sh
+        env:
+          KUBECLI: kubectl --kubeconfig .github/DestKubeconfig -n ${{ env.DestRestoreNS }}
+          
       # Create Restore
       - name: Create Restore
         shell: bash
         run: |
           echo "Creating Restore"
           $KUBECLI create -f RunnerRestore.yaml
-          sleep 240
+          ./wait-restore.sh
           echo "Check Restore"
-          $KUBECLI get restore -n ${{ env.DestRestoreNS }}
+          $KUBECLI get restore
         env:
-          KUBECLI: kubectl --kubeconfig .github/DestKubeconfig 
+          KUBECLI: kubectl --kubeconfig .github/DestKubeconfig -n ${{ env.DestRestoreNS }}
