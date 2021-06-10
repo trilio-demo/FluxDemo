@@ -117,6 +117,7 @@ jobs:
 
       # Create BackupPlan and Backup
       - id: CreateBackup
+        name: "Create BackupPlan and Backup"
         shell: bash
         run: |
           echo "Creating BackupPlan"
@@ -163,7 +164,7 @@ jobs:
         with: 
           path: ".github/"
 
-      # Create Manifests
+      # Create Manifests for restore with StorageClass transform
       - name: Create Restore manifests
         shell: bash
         run: |
@@ -182,6 +183,20 @@ jobs:
                 namespace: ${{ env.DestRestoreTargetNS }}
             restoreNamespace: ${{ env.DestRestoreNS }}
             skipIfAlreadyExists: true
+            transformComponents:
+              custom:
+                - transformName: t1
+                  resources:
+                    groupVersionKind:
+                      group: ""
+                      version: v1
+                      kind: PersistentVolumeClaim
+                    objects:
+                      - mysql-pv-claim
+                  jsonPatches:
+                    - op: replace
+                      path: "/spec/storageClassName"
+                      value: csi-hostpath-sc
           END
           
       # Check Restore manifest 
