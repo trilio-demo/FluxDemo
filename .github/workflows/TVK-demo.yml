@@ -197,7 +197,7 @@ jobs:
           cat >> wait-restore.sh <<END 
           #!/bin/bash
 
-          until ($KUBECLI get restore runner-restore 2>/dev/null | grep Completed); do sleep 5; done
+          until ($KUBECLI get restore runner-restore 2>/dev/null | egrep "Completed|Failed"); do sleep 5; done
           sleep 10
   
           END
