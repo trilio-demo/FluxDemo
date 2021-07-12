@@ -120,6 +120,9 @@ jobs:
         name: "Create BackupPlan and Backup"
         shell: bash
         run: |
+          echo "Cleaning up existing BackupPlan and Backups"
+          $KUBECLI delete backup --all
+          $KUBECLI delete backupplan --all
           echo "Creating BackupPlan"
           $KUBECLI create -f RunnerBackupPlan.yaml
           sleep 10
@@ -183,20 +186,20 @@ jobs:
                 namespace: ${{ env.DestRestoreTargetNS }}
             restoreNamespace: ${{ env.DestRestoreNS }}
             skipIfAlreadyExists: true
-            transformComponents:
-              custom:
-                - transformName: t1
-                  resources:
-                    groupVersionKind:
-                      group: ""
-                      version: v1
-                      kind: PersistentVolumeClaim
-                    objects:
-                      - mysql-pv-claim
-                  jsonPatches:
-                    - op: replace
-                      path: "/spec/storageClassName"
-                      value: csi-hostpath-sc
+            #transformComponents:
+            #  custom:
+            #    - transformName: t1
+            #      resources:
+            #        groupVersionKind:
+            #          group: ""
+            #          version: v1
+            #          kind: PersistentVolumeClaim
+            #        objects:
+            #          - mysql-pv-claim
+            #      jsonPatches:
+            #        - op: replace
+            #          path: "/spec/storageClassName"
+            #          value: csi-hostpath-sc
           END
           
       # Check Restore manifest 
@@ -226,6 +229,8 @@ jobs:
       - name: Create Restore
         shell: bash
         run: |
+          echo "Cleaning up existing Restores"
+          $KUBECLI delete restore --all
           echo "Creating Restore"
           $KUBECLI create -f RunnerRestore.yaml
           ./wait-restore.sh
