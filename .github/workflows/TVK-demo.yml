@@ -186,20 +186,20 @@ jobs:
                 namespace: ${{ env.DestRestoreTargetNS }}
             restoreNamespace: ${{ env.DestRestoreNS }}
             skipIfAlreadyExists: true
-            #transformComponents:
-            #  custom:
-            #    - transformName: t1
-            #      resources:
-            #        groupVersionKind:
-            #          group: ""
-            #          version: v1
-            #          kind: PersistentVolumeClaim
-            #        objects:
-            #          - mysql-pv-claim
-            #      jsonPatches:
-            #        - op: replace
-            #          path: "/spec/storageClassName"
-            #          value: csi-hostpath-sc
+            transformComponents:
+              custom:
+                - transformName: t1
+                  resources:
+                    groupVersionKind:
+                      group: ""
+                      version: v1
+                      kind: PersistentVolumeClaim
+                    objects:
+                      - mysql-pv-claim
+                  jsonPatches:
+                    - op: replace
+                      path: "/spec/storageClassName"
+                      value: standard-csi
           END
           
       # Check Restore manifest 
